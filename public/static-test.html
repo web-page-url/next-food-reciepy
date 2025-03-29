@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Static Recipe Generator Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.6;
+      background-color: #fff8f5;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #f97316;
+    }
+    .test-box {
+      background-color: white;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2rem;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 1rem;
+      border-radius: 0.25rem;
+      overflow-x: auto;
+    }
+    .btn {
+      background-color: #f97316;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Static Recipe Generator Test</h1>
+    
+    <div class="test-box">
+      <h2>Environment Variables Check</h2>
+      <p>Check if the DeepSeek API Key is available:</p>
+      <pre id="env-check">Checking...</pre>
+      <button class="btn" id="check-env">Check Environment</button>
+    </div>
+
+    <div class="test-box">
+      <h2>CORS Test</h2>
+      <p>Testing CORS with a simple request to DeepSeek API:</p>
+      <pre id="cors-result">Click the button to test</pre>
+      <button class="btn" id="test-cors">Test CORS</button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('check-env').addEventListener('click', function() {
+      const envCheck = document.getElementById('env-check');
+      
+      // Check if process.env is available in the client build
+      try {
+        const hasKey = !!window.ENV_DEEPSEEK_API_KEY;
+        envCheck.textContent = `API Key available: ${hasKey}`;
+      } catch (error) {
+        envCheck.textContent = `Error checking env: ${error.message}`;
+      }
+    });
+
+    document.getElementById('test-cors').addEventListener('click', async function() {
+      const corsResult = document.getElementById('cors-result');
+      corsResult.textContent = 'Testing...';
+      
+      try {
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'OPTIONS',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        corsResult.textContent = `Response status: ${response.status}`;
+      } catch (error) {
+        corsResult.textContent = `CORS Error: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html> 
