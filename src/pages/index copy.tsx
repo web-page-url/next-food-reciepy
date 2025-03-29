@@ -60,25 +60,21 @@ export default function Home() {
     setQuery(transcript);
   };
 
-  // Function to fetch a recipe image from reliable food image collection
+  // Function to fetch a recipe image from Unsplash
   const fetchRecipeImage = async (title: string) => {
     try {
-      // Make sure the query has "food" in it
-      const searchQuery = `food ${title}`;
-      console.log("Using search query:", searchQuery);
-      
-      // Static collection of food images with direct URLs
+      // Array of reliable, direct image URLs that don't require redirects
       const foodImages = [
-        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80',
-        'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80',
-        'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80',
-        'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80',
-        'https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80',
-        'https://static.vecteezy.com/system/resources/thumbnails/022/911/694/small_2x/vegetarian-cuisine-on-rustic-wooden-table-top-view-of-various-healthy-dishes-free-photo.jpg'
+        'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800&h=600',
+        'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=800&h=600',
+        'https://images.pexels.com/photos/1099680/pexels-photo-1099680.jpeg?auto=compress&cs=tinysrgb&w=800&h=600',
+        'https://images.pexels.com/photos/1640772/pexels-photo-1640772.jpeg?auto=compress&cs=tinysrgb&w=800&h=600',
+        'https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg?auto=compress&cs=tinysrgb&w=800&h=600',
+        'https://images.pexels.com/photos/616354/pexels-photo-616354.jpeg?auto=compress&cs=tinysrgb&w=800&h=600'
       ];
       
       // Use consistent image by selecting one based on the recipe title
-      const titleHash = searchQuery.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const titleHash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       const selectedImageIndex = titleHash % foodImages.length;
       const imageUrl = foodImages[selectedImageIndex];
       
@@ -86,8 +82,8 @@ export default function Home() {
       setRecipeImage(imageUrl);
     } catch (error) {
       console.error('Error setting image:', error);
-      // Fallback to a guaranteed working food image
-      setRecipeImage('https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80');
+      // Fallback to a default food image if all else fails
+      setRecipeImage('https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=800&h=600');
     }
   };
 
@@ -320,7 +316,7 @@ export default function Home() {
                         onError={(e) => {
                           console.error("Image failed to load");
                           // Fallback to a reliable image if loading fails
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80';
+                          (e.target as HTMLImageElement).src = 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=800&h=600';
                         }}
                       />
                     </div>
