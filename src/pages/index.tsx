@@ -105,7 +105,7 @@ export default function Home() {
         console.log("Attempting to call OpenRouter API with query:", query);
         // Try to call OpenRouter API with DeepSeek model
         data = await callDeepseekAPI(query);
-        console.log("Successfully received recipe data from API");
+        console.log("Successfully received recipe data from API", "\n data:", data);
       } catch (error: any) {
         // Add a more descriptive error message based on the error type
         console.error("API call failed:", error.message);
@@ -129,13 +129,58 @@ export default function Home() {
         setUsingMockData(true);
       }
       
-      // Generate markdown for the recipe display
-      const markdown = `## ${data.title}\n\n### Ingredients\n${data.ingredients?.map((i: string) => `- **${i}**`).join('\n')}\n\n### Steps\n${data.steps?.map((s: string, i: number) => `**${i + 1}.** ${s}`).join('\n\n')}`;
+      // Generate markdown for the recipe display with a proper HTML table for ingredients
+      const generateIngredientsTable = (ingredients: string[] = []) => {
+        return `
+<div class="ingredients-table">
+  <table>
+    <thead>
+      <tr>
+        <th>Ingredient</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${ingredients.map(i => {
+        // Try to split the ingredient into amount and name
+        // Look for patterns like "2 cups" or "1/2 tsp" at the beginning
+        const match = i.match(/^([\d./\s]+\s*(?:cup|cups|tsp|tbsp|tablespoon|teaspoon|g|kg|oz|pound|lb|ml|l)?)\s+(.+)$/i);
+        if (match) {
+          const amount = match[1].trim();
+          const ingredient = match[2].trim();
+          return `<tr>
+            <td><strong>${ingredient}</strong></td>
+            <td>${amount}</td>
+          </tr>`;
+        }
+        // If no match, put everything in the ingredient column
+        return `<tr>
+          <td><strong>${i}</strong></td>
+          <td></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+</div>`;
+      };
+
+      // Create proper HTML structure for the recipe
+      const recipeHtml = `
+<h2>${data.title}</h2>
+
+<h3>Ingredients</h3>
+${generateIngredientsTable(data.ingredients)}
+
+<h3>Steps</h3>
+${(data.steps || []).map((step, index) => 
+  `<p><strong>${index + 1}.</strong> ${step}</p>`
+).join('')}
+      `;
       
       setRecipe({
         ...data,
         timestamp: Date.now(),
-        markdown
+        markdown: recipeHtml
       });
       
       // Fetch a recipe image after we have the recipe data
@@ -338,19 +383,55 @@ export default function Home() {
                   {/* Recipe content */}
                   <div className="prose max-w-none prose-headings:text-black prose-p:text-black prose-li:text-black prose-li:marker:text-orange-600 prose-strong:text-black prose-h2:text-2xl prose-h3:text-xl font-medium">
                     <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-200">
-                      <ReactMarkdown 
+                      <div 
                         className="text-black font-medium"
-                        components={{
-                          p: ({node, ...props}) => <p style={{color: 'black', fontWeight: 500}} {...props} />,
-                          li: ({node, ...props}) => <li style={{color: 'black', fontWeight: 500}} {...props} />,
-                          h2: ({node, ...props}) => <h2 style={{color: 'black', fontWeight: 700}} {...props} />,
-                          h3: ({node, ...props}) => <h3 style={{color: 'black', fontWeight: 600}} {...props} />,
-                          strong: ({node, ...props}) => <strong style={{color: 'black', fontWeight: 700}} {...props} />
-                        }}
-                      >
-                        {recipe.markdown || ''}
-                      </ReactMarkdown>
+                        dangerouslySetInnerHTML={{ __html: recipe.markdown || '' }}
+                      />
                     </div>
+                    <style jsx global>{`
+                      .ingredients-table table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 1rem 0;
+                      }
+                      .ingredients-table th,
+                      .ingredients-table td {
+                        border: 1px solid #fed7aa;
+                        padding: 0.75rem;
+                        text-align: left;
+                        color: black;
+                      }
+                      .ingredients-table th {
+                        background-color: #fff7ed;
+                        font-weight: 600;
+                      }
+                      .ingredients-table tr:nth-child(even) {
+                        background-color: #fff7ed;
+                      }
+                      .ingredients-table tr:hover {
+                        background-color: #ffedd5;
+                      }
+                      .prose h2 {
+                        font-size: 1.5rem;
+                        font-weight: 700;
+                        margin-top: 0;
+                        color: black;
+                      }
+                      .prose h3 {
+                        font-size: 1.25rem;
+                        font-weight: 600;
+                        margin-top: 1.5rem;
+                        color: black;
+                      }
+                      .prose p {
+                        margin-bottom: 0.75rem;
+                        color: black;
+                      }
+                      .prose strong {
+                        font-weight: 700;
+                        color: black;
+                      }
+                    `}</style>
                   </div>
 
                   {/* Nutrition section */}
