@@ -1,9 +1,11 @@
 import '../polyfills';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaMicrophone, FaDownload, FaBookmark, FaRegBookmark, FaUtensils, FaSearch } from 'react-icons/fa';
+import { FaMicrophone, FaDownload, FaBookmark, FaRegBookmark, FaUtensils, FaSearch, FaTable, FaBook } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { generateRecipe as callDeepseekAPI, getMockRecipe } from '../services/recipeService';
 
 // Create a client-side only component for speech recognition
@@ -31,6 +33,34 @@ type Recipe = {
   image_prompt?: string;
   markdown?: string;
   timestamp?: number;
+};
+
+// Helper function to split ingredient text into amount and name
+const splitIngredientsIntoAmountAndName = (ingredient: string): { amount: string, name: string } => {
+  // Try to match standard formats like "2 cups flour" or "1/2 tsp salt"
+  const match = ingredient.match(/^([\d\/\.\s]+\s*(?:cup|cups|tbsp|tsp|oz|g|kg|ml|l|lb|lbs|pound|tablespoon|teaspoon|pinch|dash)?\s*)(.+)$/i);
+  
+  if (match && match[1] && match[1].trim()) {
+    return {
+      amount: match[1].trim(),
+      name: match[2].trim()
+    };
+  }
+  
+  // Try a simpler approach - just split on the first space
+  const parts = ingredient.split(/\s+(.+)/);
+  if (parts.length >= 2) {
+    return {
+      amount: parts[0],
+      name: parts[1]
+    };
+  }
+  
+  // Fallback if no clear amount
+  return {
+    amount: "",
+    name: ingredient
+  };
 };
 
 export default function Home() {
@@ -129,8 +159,26 @@ export default function Home() {
         setUsingMockData(true);
       }
       
-      // Generate markdown for the recipe display
-      const markdown = `## ${data.title}\n\n### Ingredients\n${data.ingredients?.map((i: string) => `- **${i}**`).join('\n')}\n\n### Steps\n${data.steps?.map((s: string, i: number) => `**${i + 1}.** ${s}`).join('\n\n')}`;
+      // Generate markdown for the recipe display with ingredients in a table format
+      const ingredientsTable = `<div class="ingredients-table">
+<table>
+<thead>
+<tr>
+<th>Ingredient</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody>
+${data.ingredients?.map((i: string) => {
+  // Use the helper function to split each ingredient
+  const { name, amount } = splitIngredientsIntoAmountAndName(i);
+  return `<tr>\n<td><strong>${name}</strong></td>\n<td>${amount}</td>\n</tr>`;
+}).join('\n')}
+</tbody>
+</table>
+</div>`;
+
+      const markdown = `## ${data.title}\n\n### Ingredients\n\n${ingredientsTable}\n\n### Steps\n${data.steps?.map((s: string, i: number) => `**${i + 1}.** ${s}`).join('\n\n')}`;
       
       setRecipe({
         ...data,
@@ -210,13 +258,35 @@ export default function Home() {
             🍳 AI Recipe Generator
           </motion.h1>
           <motion.p 
-            className="text-gray-700 text-lg"
+            className="text-gray-700 text-lg mb-4"
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
             Discover delicious recipes with AI-powered suggestions
           </motion.p>
+          
+          <div className="flex flex-wrap justify-center gap-3 mb-4">
+            <Link href="/recipes">
+              <motion.button
+                className="bg-orange-200 text-orange-800 px-4 py-2 rounded-lg hover:bg-orange-300 transition-colors inline-flex items-center gap-2"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FaBook /> View Recipe Collection
+              </motion.button>
+            </Link>
+            
+            <Link href="/convert">
+              <motion.button
+                className="bg-blue-200 text-blue-800 px-4 py-2 rounded-lg hover:bg-blue-300 transition-colors inline-flex items-center gap-2"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FaTable /> Ingredient Converter
+              </motion.button>
+            </Link>
+          </div>
         </header>
         
         {/* Search Section */}
@@ -289,6 +359,16 @@ export default function Home() {
                       )}
                     </div>
                     <div className="flex gap-3 mt-3 sm:mt-0">
+                      <Link href={`/convert?title=${encodeURIComponent(recipe.title || '')}`}>
+                        <motion.button
+                          className="p-2 text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 rounded-full"
+                          title="Convert or edit ingredients"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <FaTable size={20} />
+                        </motion.button>
+                      </Link>
                       <motion.button
                         onClick={isSaved ? () => removeRecipe(recipe.timestamp!) : saveRecipe}
                         className="p-2 text-yellow-600 hover:text-yellow-800 transition-colors bg-yellow-50 rounded-full"
@@ -340,12 +420,18 @@ export default function Home() {
                     <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-200">
                       <ReactMarkdown 
                         className="text-black font-medium"
+                        rehypePlugins={[rehypeRaw]}
                         components={{
                           p: ({node, ...props}) => <p style={{color: 'black', fontWeight: 500}} {...props} />,
                           li: ({node, ...props}) => <li style={{color: 'black', fontWeight: 500}} {...props} />,
                           h2: ({node, ...props}) => <h2 style={{color: 'black', fontWeight: 700}} {...props} />,
                           h3: ({node, ...props}) => <h3 style={{color: 'black', fontWeight: 600}} {...props} />,
-                          strong: ({node, ...props}) => <strong style={{color: 'black', fontWeight: 700}} {...props} />
+                          strong: ({node, ...props}) => <strong style={{color: 'black', fontWeight: 700}} {...props} />,
+                          table: ({node, ...props}) => <table className="w-full border-collapse my-4" {...props} />,
+                          thead: ({node, ...props}) => <thead className="bg-orange-100" {...props} />,
+                          th: ({node, ...props}) => <th className="border border-orange-200 p-2 text-left text-black font-semibold" {...props} />,
+                          td: ({node, ...props}) => <td className="border border-orange-200 p-2 text-black" {...props} />,
+                          tr: ({node, ...props}) => <tr className="border-b border-orange-200" {...props} />
                         }}
                       >
                         {recipe.markdown || ''}
